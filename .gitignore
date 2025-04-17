@@ -18,7 +18,6 @@
 # misc
 .DS_Store
 *.pem
-/app/seed
 
 # debug
 npm-debug.log*
