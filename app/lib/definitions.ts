@@ -95,3 +95,12 @@ export type State = {
   };
   message?: string | null;
 };
+export type registerformState = {
+  errors?: {
+    name?: string[];
+    email?: string[];
+    password?: string[];
+  };
+  message?: string | null;
+  success?: boolean;
+};

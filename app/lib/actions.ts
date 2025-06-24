@@ -1,13 +1,14 @@
 "use server";
 import { z } from "zod";
-
+import { v4 as uuidv4 } from "uuid";
 import postgres from "postgres";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { State } from "./definitions";
+import { registerformState, State } from "./definitions";
 
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import bcrypt from "bcryptjs";
 
 const FormSchema = z.object({
   id: z.string(),
@@ -118,4 +119,56 @@ export async function authenticate(
     }
     throw error;
   }
+}
+const RegisterFormSchema = z.object({
+  name: z.string().min(1, { message: "Please enter your name." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters." }),
+});
+
+export async function Registeruser(
+  prevState: registerformState, // Changed from string | undefined to State for consistency
+  formData: FormData
+): Promise<registerformState> {
+  // Changed return type to Promise<State>
+  const validatedfields = RegisterFormSchema.safeParse(
+    Object.fromEntries(formData)
+  );
+
+  console.log(formData);
+
+  if (!validatedfields.success) {
+    return {
+      errors: validatedfields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Register User.",
+    };
+  }
+
+  const { name, email, password } = validatedfields.data;
+  try {
+    // Check if user already exists
+    const existingUser = await sql`SELECT id FROM users WHERE email = ${email}`;
+    if (existingUser.length > 0) {
+      return {
+        message:
+          "Registration Failed: User with this email already exists. Please try a different email.",
+      };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const id = uuidv4(); // Generate a unique ID
+
+    await sql`
+        INSERT INTO users (id, name, email, password)
+        VALUES (${id}, ${name}, ${email}, ${hashedPassword})
+      `;
+  } catch (error) {
+    return {
+      success: false,
+      message: "Database Error: Failed to Register User.",
+    };
+  }
+  redirect("/login");
 }
