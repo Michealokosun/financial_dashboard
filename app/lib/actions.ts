@@ -56,6 +56,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
   }
 
   revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard");
   redirect("/dashboard/invoices");
 }
 
@@ -94,12 +95,14 @@ export async function Editinvoice(
     };
   }
   revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard");
   redirect("/dashboard/invoices");
 }
 
 export async function deleteInvoice(id: string) {
   await sql`DELETE FROM invoices WHERE id = ${id}`;
   revalidatePath("/dashboard/invoices");
+  revalidatePath("/dashboard");
 }
 
 export async function authenticate(
